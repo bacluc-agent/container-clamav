@@ -13,5 +13,9 @@ ClamAV container image with database autoupdate
 The upstream-version tag is derived from the `FROM clamav/clamav:<version>` line
 in the `Containerfile`, which Renovate keeps current. That tag is **mutable**:
 it is repointed whenever the image is rebuilt from the same upstream version.
-Push a git tag on a `Publish Image`-labeled PR for an immutable, explicitly cut
-release tag.
+Merging a `Publish Image`-labeled PR automatically creates a read-only
+`vX.Y.Z` release tag and publishes the image as `:vX.Y.Z` — the immutable
+release reference. The auto-tags follow strict SemVer only (`^v\d+\.\d+\.\d+$`),
+so they are **not** derived from the ClamAV upstream version, and the existing
+non-conforming tag `v1.4.2-r0` is ignored: the first auto-tag is `v0.0.1`,
+with each additional `Publish Image` label bumping the patch version.

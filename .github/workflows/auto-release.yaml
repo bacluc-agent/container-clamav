@@ -9,6 +9,9 @@ on:
 
 permissions:
   contents: write
+  issues: write
+  pull-requests: write
+  actions: write
 
 jobs:
   create-release-tag:
@@ -18,4 +21,5 @@ jobs:
         uses: projectsyn/pr-label-tag-action@v1
         with:
           trigger: |
-            Publish Image
+            Build & Push Container Image
+          patch-label: Publish Image
