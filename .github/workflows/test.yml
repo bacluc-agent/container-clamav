@@ -12,6 +12,21 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       - name: Build image
         run: docker build -t test -f Containerfile .
+      - name: Run image with default identity
+        run: docker run -d --name clamav-default test
+      - name: Verify default identity
+        run: |
+          [ "$(docker inspect clamav-default --format='{{.State.Running}}')" = 'true' ]
+          [ "$(docker exec clamav-default id -u)" = '30000' ]
+          [ "$(docker exec clamav-default id -g)" = '0' ]
+      - name: Wait for default image
+        run: |
+          wait=60
+          while ! docker exec clamav-default nc -z 0.0.0.0 3310; do
+            wait=$((wait - 1))
+            [ "$wait" -le 0 ] && exit 1
+            sleep 1
+          done
       - name: Run image
         run: docker run -d --name clamav --user 40000:40001 test
       - name: Verify
