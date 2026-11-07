@@ -13,10 +13,16 @@ jobs:
       - name: Build image
         run: docker build -t test -f Containerfile .
       - name: Run image
-        run: docker run -d --name clamav test
+        run: docker run -d --name clamav --user 40000:40001 test
       - name: Verify
         run: |
           [ $(docker inspect clamav --format='{{.State.Running}}') = 'true' ]
+          [ "$(docker exec clamav id -u)" = '40000' ]
+          [ "$(docker exec clamav id -g)" = '40001' ]
+          docker exec clamav sh -c 'test -w /var/lib/clamav && test -w /var/log/clamav'
+      - name: Test temporary file
+        run: |
+          docker exec clamav sh -c 'file=$(mktemp /tmp/clamav-test.XXXXXX); test -f "$file"; rm "$file"; test ! -e "$file"'
       - name: Wait online
         run : |
           wait=60
