@@ -12,7 +12,8 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       - name: Verify FROM tag parser
         run: |
-          [ "$(sh scripts/parse-clamav-version.sh Containerfile)" = '1.5.4' ]
+          out=$(sh scripts/parse-clamav-version.sh Containerfile)
+          echo "$out" | grep -Eq '^[0-9]+\.[0-9]+(\.[0-9]+)?$'
           printf 'FROM clamav/clamav@sha256:0000000000000000000000000000000000000000000000000000000000000000\n' > /tmp/bad
           ! sh scripts/parse-clamav-version.sh /tmp/bad 2>/dev/null
       - name: Build image

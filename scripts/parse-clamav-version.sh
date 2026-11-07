@@ -4,7 +4,7 @@
 # missing or has no numeric version tag (accepts x.y and x.y.z).
 set -eu
 cf=${1:?'usage: parse-clamav-version.sh Containerfile'}
-tag=$(sed -En 's|^[[:space:]]*FROM[[:space:]]+clamav/clamav:([A-Za-z0-9._-]+)(@[^[:space:]]*)?([[:space:]]*#.*)?$|\1|p' "$cf" | head -n 1)
+tag=$(sed 's/\r$//' "$cf" | sed -En 's|^[[:space:]]*FROM[[:space:]]+clamav/clamav:([A-Za-z0-9._-]+)(@[^[:space:]]*)?([[:space:]]*#.*)?$|\1|p' | head -n 1)
 case "$tag" in
   [0-9]*.[0-9]*) printf '%s\n' "$tag" ;;
   *) echo "ERROR: no numeric clamav/clamav tag found in $cf" >&2; exit 1 ;;
