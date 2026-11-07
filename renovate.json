@@ -17,6 +17,18 @@
     {
       "matchUpdateTypes": ["patch", "digest"],
       "automerge": true
+    },
+    {
+      "matchManagers": ["docker"],
+      "matchDepNames": ["clamav/clamav"],
+      "matchUpdateTypes": ["minor"],
+      "labels": ["bump:minor", "Publish Clamav Image"]
+    },
+    {
+      "matchManagers": ["docker"],
+      "matchDepNames": ["clamav/clamav"],
+      "matchUpdateTypes": ["major"],
+      "labels": ["bump:major", "Publish Clamav Image"]
     }
   ]
 }
