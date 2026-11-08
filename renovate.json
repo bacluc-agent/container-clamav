@@ -3,6 +3,7 @@
   "extends": ["config:recommended"],
   "reviewers": ["team:nunki"],
   "pinDigests": true,
+  "enabledManagers": ["dockerfile", "custom.regex"],
   "customManagers": [
     {
       "customType": "regex",
