@@ -12,11 +12,56 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       - name: Build image
         run: docker build -t test -f Containerfile .
+      - name: Verify named clamav identity
+        run: |
+          [ "$(docker run --rm --user clamav test id -u)" = '100' ]
+          [ "$(docker run --rm --user clamav test id -g)" = '101' ]
+      - name: Run image as root
+        run: >-
+          docker run -d --name clamav-root --user 0:0
+          --entrypoint sh test -c
+          'sed -i "s|^LocalSocket /tmp/clamd.sock$|LocalSocket /run/clamav/clamd.sock|;
+          s|^LogFile /var/log/clamav/clamd.log$|LogFile /tmp/clamd-root.log|"
+          /etc/clamav/clamd.conf && exec /entrypoint'
+      - name: Verify root identity and config override
+        run: |
+          [ "$(docker inspect clamav-root --format='{{.State.Running}}')" = 'true' ]
+          [ "$(docker exec clamav-root id -u)" = '0' ]
+          [ "$(docker exec clamav-root id -g)" = '0' ]
+          docker exec clamav-root sh -c 'grep -q "^LogFile /tmp/clamd-root.log$" /etc/clamav/clamd.conf'
+      - name: Wait for root image
+        run: |
+          wait=60
+          while ! docker exec clamav-root nc -z 0.0.0.0 3310; do
+            wait=$((wait - 1))
+            [ "$wait" -le 0 ] && exit 1
+            sleep 1
+          done
+          docker exec clamav-root test -S /run/clamav/clamd.sock
+      - name: Test root Eicar
+        run: |
+          docker exec clamav-root sh -c 'echo '\''X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*'\'' > /tmp/eicar.com'
+          set +e
+          docker exec clamav-root clamdscan --stream /tmp/eicar.com
+          [ $? -eq 1 ]
+      - name: Run image with default identity
+        run: docker run -d --name clamav-default test
+      - name: Verify default identity
+        run: |
+          [ "$(docker inspect clamav-default --format='{{.State.Running}}')" = 'true' ]
+          [ "$(docker exec clamav-default id -u)" = '30000' ]
+          [ "$(docker exec clamav-default id -g)" = '0' ]
       - name: Run image
-        run: docker run -d --name clamav test
+        run: docker run -d --name clamav --user 40000:40001 test
       - name: Verify
         run: |
           [ $(docker inspect clamav --format='{{.State.Running}}') = 'true' ]
+          [ "$(docker exec clamav id -u)" = '40000' ]
+          [ "$(docker exec clamav id -g)" = '40001' ]
+          docker exec clamav sh -c 'test -w /var/lib/clamav && test -w /var/log/clamav'
+      - name: Test temporary file
+        run: |
+          docker exec clamav sh -c 'file=$(mktemp /tmp/clamav-test.XXXXXX); test -f "$file"; rm "$file"; test ! -e "$file"'
       - name: Wait online
         run : |
           wait=60
@@ -25,9 +70,21 @@ jobs:
             [ "$wait" -le 0 ] && exit 1
             sleep 1
           done
+          docker exec clamav test -S /tmp/clamd.sock
       - name: Test Eicar
         run: |
           docker exec clamav sh -c 'echo '\''X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*'\'' > /tmp/eicar.com'
           set +e
           docker exec clamav clamdscan --stream /tmp/eicar.com
           [ $? -eq 1 ]
+      - name: Verify restrictive bind mount limitation
+        run: |
+          mkdir -p "$RUNNER_TEMP/clamav-restrictive"
+          chmod 700 "$RUNNER_TEMP/clamav-restrictive"
+          ! docker run --rm --user 40000:40001 \
+            --mount "type=bind,src=$RUNNER_TEMP/clamav-restrictive,dst=/tmp" \
+            test sh -c 'touch /tmp/must-not-be-created'
+      - name: Verify signal handling
+        run: |
+          docker stop clamav
+          [ "$(docker inspect clamav --format='{{.State.Status}}')" = 'exited' ]
