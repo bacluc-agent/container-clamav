@@ -12,6 +12,10 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       - name: Build image
         run: docker build -t test -f Containerfile .
+      - name: Verify named clamav identity
+        run: |
+          [ "$(docker run --rm --user clamav test id -u)" = '100' ]
+          [ "$(docker run --rm --user clamav test id -g)" = '101' ]
       - name: Run image as root
         run: >-
           docker run -d --name clamav-root --user 0:0
@@ -80,3 +84,7 @@ jobs:
           ! docker run --rm --user 40000:40001 \
             --mount "type=bind,src=$RUNNER_TEMP/clamav-restrictive,dst=/tmp" \
             test sh -c 'touch /tmp/must-not-be-created'
+      - name: Verify signal handling
+        run: |
+          docker stop clamav
+          [ "$(docker inspect clamav --format='{{.State.Status}}')" = 'exited' ]
