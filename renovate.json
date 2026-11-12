@@ -6,14 +6,40 @@
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["^Containerfile$"],
+      "fileMatch": ["^\\.github/workflows/.*\\.ya?ml$", "^Containerfile$"],
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)( versioning=(?<versioning>.*?))?\\sENV .*?_VERSION=\"(?<currentValue>.*)\"\\s"
+        "#\\s*renovate:\\s*datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)\\n\\s*CLAMAV_VERSION\\s*[=:]\\s*\"?(?<currentValue>[0-9][\\w.-]*)\"?",
+        "^FROM (?<depName>clamav/clamav):(?<currentValue>[^@\\s]+)(@(?<currentDigest>sha256:[a-f0-9]+))?"
       ],
-      "versioningTemplate": "{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}"
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "semver"
     }
   ],
   "packageRules": [
+    {
+      "matchPackageNames": ["clamav/clamav"],
+      "groupName": "clamav"
+    },
+    {
+      "matchPackageNames": ["clamav/clamav"],
+      "matchUpdateTypes": ["patch"],
+      "labels": ["renovate", "dependency", "bump:patch"]
+    },
+    {
+      "matchPackageNames": ["clamav/clamav"],
+      "matchUpdateTypes": ["minor"],
+      "labels": ["renovate", "dependency", "bump:minor"]
+    },
+    {
+      "matchPackageNames": ["clamav/clamav"],
+      "matchUpdateTypes": ["major"],
+      "labels": ["renovate", "dependency", "bump:major"]
+    },
+    {
+      "matchPackageNames": ["clamav/clamav"],
+      "matchUpdateTypes": ["digest"],
+      "labels": ["renovate", "dependency"]
+    },
     {
       "matchUpdateTypes": ["patch", "digest"],
       "automerge": true
