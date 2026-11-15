@@ -6,10 +6,9 @@
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["^\\.github/workflows/.*\\.ya?ml$", "^Containerfile$"],
+      "fileMatch": ["^\\.github/workflows/.*\\.ya?ml$"],
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)\\n\\s*CLAMAV_VERSION\\s*[=:]\\s*\"?(?<currentValue>[0-9][\\w.-]*)\"?",
-        "^FROM (?<depName>clamav/clamav):(?<currentValue>[^@\\s]+)(@(?<currentDigest>sha256:[a-f0-9]+))?"
+        "#\\s*renovate:\\s*datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)\\n\\s*CLAMAV_VERSION\\s*[=:]\\s*\"?(?<currentValue>[0-9][\\w.-]*)\"?"
       ],
       "datasourceTemplate": "docker",
       "versioningTemplate": "semver"
