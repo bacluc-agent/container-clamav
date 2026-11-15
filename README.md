@@ -7,8 +7,8 @@ ClamAV container image with database autoupdate.
 - Pull requests build the image for validation but do not push it to the registry.
 - A push to the default branch publishes the git-derived branch tag, the
   `CLAMAV_VERSION` tag, and `latest`.
-- A release-tag push publishes the git-derived release tag and the
-  `CLAMAV_VERSION` tag. It does not publish `latest` implicitly.
+- A release-tag push publishes the git-derived release tag. It does not publish
+  `CLAMAV_VERSION` or `latest` implicitly.
 - Manual workflow dispatches build the selected ref but do not publish the
   mutable `CLAMAV_VERSION` tag or `latest`.
 
