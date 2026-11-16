@@ -94,8 +94,8 @@ jobs:
               renovate_comment + r"\n\s*" + version_pattern, workflow
           )
           image_match = re.search(image_pattern, containerfile, re.MULTILINE)
-          assert workflow_match and workflow_match.group("version") == "1.5.4"
-          assert image_match and image_match.group("version") == "1.5.4"
+          assert workflow_match and image_match
+          assert workflow_match.group("version") == image_match.group("version")
           assert all(
               re.search(pattern.replace("?<", "?P<"), workflow, re.MULTILINE)
               or re.search(pattern.replace("?<", "?P<"), containerfile, re.MULTILINE)
