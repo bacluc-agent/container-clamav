@@ -121,9 +121,21 @@ jobs:
                   }
               ],
           }
+          assert "currentDigest" not in regex_files[".github/workflows/push.yml"][0]
+          assert regex_files["Containerfile"][0]["currentDigest"] == containerfile_match.group("digest")
           assert workflow_version == containerfile_match.group("version")
 
           config = json.loads(Path("renovate.json").read_text())
+          digest_rule = next(
+              rule
+              for rule in config["packageRules"]
+              if rule.get("matchFileNames") == [".github/workflows/push.yml"]
+          )
+          assert digest_rule == {
+              "matchPackageNames": ["clamav/clamav"],
+              "matchFileNames": [".github/workflows/push.yml"],
+              "pinDigests": False,
+          }
           assert all(
               rule["matchPackageNames"] == ["clamav/clamav"]
               for rule in config["packageRules"]

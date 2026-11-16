@@ -18,6 +18,11 @@
   "packageRules": [
     {
       "matchPackageNames": ["clamav/clamav"],
+      "matchFileNames": [".github/workflows/push.yml"],
+      "pinDigests": false
+    },
+    {
+      "matchPackageNames": ["clamav/clamav"],
       "groupName": "clamav"
     },
     {
