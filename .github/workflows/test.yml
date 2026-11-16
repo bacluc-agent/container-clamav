@@ -79,6 +79,7 @@ jobs:
             --platform=local --dry-run=extract 2>&1 | tee renovate-extraction.jsonl
           python3 - <<'PY'
           import json
+          import re
           from pathlib import Path
 
           extraction = next(
@@ -99,16 +100,33 @@ jobs:
               ]
               for package in extraction["packageFiles"]["regex"]
           }
+          workflow = Path(".github/workflows/push.yml").read_text()
+          workflow_version = re.search(
+              r"^  CLAMAV_VERSION: (\S+)$", workflow, re.MULTILINE
+          ).group(1)
+          containerfile_match = re.search(
+              r"^FROM clamav/clamav:(?P<version>[^@\s]+)@(?P<digest>sha256:[a-f0-9]+)$",
+              Path("Containerfile").read_text(),
+              re.MULTILINE,
+          )
           assert regex_files == {
               ".github/workflows/push.yml": [
-                  {"depName": "clamav/clamav", "currentValue": "1.5.4"}
+                  {"depName": "clamav/clamav", "currentValue": workflow_version}
               ],
               "Containerfile": [
                   {
                       "depName": "clamav/clamav",
-                      "currentValue": "1.5.4",
-                      "currentDigest": "sha256:6d87c712e3391e13c1ba6e05dfb074d4b1ddb5a6834b23bb9da990d2a4ef042a",
+                      "currentValue": containerfile_match.group("version"),
+                      "currentDigest": containerfile_match.group("digest"),
                   }
               ],
           }
+          assert workflow_version == containerfile_match.group("version")
+
+          config = json.loads(Path("renovate.json").read_text())
+          assert all(
+              rule["matchPackageNames"] == ["clamav/clamav"]
+              for rule in config["packageRules"]
+              if "labels" in rule
+          )
           PY
