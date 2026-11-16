@@ -41,7 +41,8 @@ jobs:
           version = re.search(r"^  CLAMAV_VERSION: (\S+)$", workflow, re.MULTILINE).group(1)
           tags_block = re.search(r"^          tags: \|\n((?:            .*\n)+)", workflow, re.MULTILINE).group(1)
           tag_specs = [line.strip() for line in tags_block.splitlines()]
-          default_branch_expression = "${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}"
+          default_branch_expression = "$" + "{{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}"
+          version_expression = "$" + "{{ env.CLAMAV_VERSION }}"
 
           def metadata_tags(ref):
               tags = set()
@@ -51,7 +52,7 @@ jobs:
                   if not spec.startswith("type=raw,value="):
                       continue
                   value, _, enable = spec.removeprefix("type=raw,value=").partition(",enable=")
-                  value = value.replace("${{ env.CLAMAV_VERSION }}", version)
+                  value = value.replace(version_expression, version)
                   if not enable or enable == default_branch_expression:
                       if not enable or ref == "refs/heads/main":
                           tags.add(value)
