@@ -93,8 +93,8 @@ jobs:
           assert workflow_match and workflow_match.group("version") == "1.5.4"
           assert image_match and image_match.group("version") == "1.5.4"
           assert all(
-              re.search(pattern, workflow, re.MULTILINE)
-              or re.search(pattern, containerfile, re.MULTILINE)
+              re.search(pattern.replace("?<", "?P<"), workflow, re.MULTILINE)
+              or re.search(pattern.replace("?<", "?P<"), containerfile, re.MULTILINE)
               for pattern in manager["matchStrings"]
           )
           PY
