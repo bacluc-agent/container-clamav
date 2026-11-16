@@ -35,17 +35,31 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
 
           workflow = Path(".github/workflows/push.yml").read_text()
-          expression = "$" + "{{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}"
-          default_branch = "enable=" + expression
-          version_tag = "type=raw,value=" + "$" + "{{ env.CLAMAV_VERSION }}" + "," + default_branch + "\n"
-          ungated_version_tag = "type=raw,value=" + "$" + "{{ env.CLAMAV_VERSION }}" + "\n"
-          assert "flavor: latest=false" in workflow
-          assert workflow.count(version_tag) == 1
-          assert workflow.count(ungated_version_tag) == 0
-          assert workflow.count("type=raw,value=latest," + default_branch) == 1
-          assert "type=ref,event=tag" in workflow
-          assert "type=raw,value=1.5.4" not in workflow
-          assert default_branch == "enable=" + expression
+          version = re.search(r"^  CLAMAV_VERSION: (\S+)$", workflow, re.MULTILINE).group(1)
+          tags_block = re.search(r"^          tags: \|\n((?:            .*\n)+)", workflow, re.MULTILINE).group(1)
+          tag_specs = [line.strip() for line in tags_block.splitlines()]
+          default_branch_expression = "${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}"
+
+          def metadata_tags(ref):
+              tags = set()
+              for spec in tag_specs:
+                  if spec == "type=ref,event=tag" and ref.startswith("refs/tags/"):
+                      tags.add(ref.removeprefix("refs/tags/"))
+                  if not spec.startswith("type=raw,value="):
+                      continue
+                  value, _, enable = spec.removeprefix("type=raw,value=").partition(",enable=")
+                  value = value.replace("${{ env.CLAMAV_VERSION }}", version)
+                  if not enable or enable == default_branch_expression:
+                      if not enable or ref == "refs/heads/main":
+                          tags.add(value)
+              return tags
+
+          release_tags = metadata_tags("refs/tags/v0.0.1")
+          main_tags = metadata_tags("refs/heads/main")
+          assert {"v0.0.1"} <= release_tags
+          assert {"1.5.4", "latest"}.isdisjoint(release_tags)
+          assert {"1.5.4", "latest"} <= main_tags
           PY
