@@ -12,4 +12,3 @@ ClamAV container image with database autoupdate.
 - Manual workflow dispatches build the selected ref and publish the
   `CLAMAV_VERSION` tag. They do not publish `latest` unless the ref is the
   default branch.
-
