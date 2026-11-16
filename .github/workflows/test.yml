@@ -73,35 +73,42 @@ jobs:
           PY
       - name: Validate Renovate extraction
         run: |
+          set -o pipefail
+          npx --yes --package renovate renovate-config-validator
+          LOG_FORMAT=json npx --yes --package renovate renovate \
+            --platform=local --dry-run=extract 2>&1 | tee renovate-extraction.jsonl
           python3 - <<'PY'
           import json
-          import re
           from pathlib import Path
 
-          config = json.loads(Path("renovate.json").read_text())
-          manager = config["customManagers"][0]
-          workflow = Path(".github/workflows/push.yml").read_text()
-          containerfile = Path("Containerfile").read_text()
-          renovate_comment = "# renovate: datasource=docker depName=clamav/clamav"
-          version_pattern = r"CLAMAV_VERSION\s*[=:]\s*\"?(?P<version>[0-9][\w.-]*)\"?"
-          image_pattern = r"^FROM (?P<depName>clamav/clamav):(?P<version>[^@\s]+)"
-
-          assert manager["customType"] == "regex"
-          assert manager["datasourceTemplate"] == "docker"
-          assert manager["versioningTemplate"] == "semver"
-          assert renovate_comment in workflow
-          workflow_match = re.search(
-              renovate_comment + r"\n\s*" + version_pattern, workflow
+          extraction = next(
+              json.loads(line)
+              for line in Path("renovate-extraction.jsonl").read_text().splitlines()
+              if line.startswith("{")
+              and json.loads(line).get("msg") == "Extracted dependencies"
           )
-          image_match = re.search(
-              image_pattern, containerfile, re.MULTILINE
-          )
-          assert "  pull_request:" not in workflow
-          assert workflow_match and image_match
-          assert workflow_match.group("version") == image_match.group("version")
-          assert all(
-              re.search(pattern.replace("?<", "?P<"), workflow, re.MULTILINE)
-              or re.search(pattern.replace("?<", "?P<"), containerfile, re.MULTILINE)
-              for pattern in manager["matchStrings"]
-          )
+          regex_files = {
+              package["packageFile"]: [
+                  {
+                      key: dependency[key]
+                      for key in ("depName", "currentValue", "currentDigest")
+                      if key in dependency
+                  }
+                  for dependency in package.get("deps", [])
+                  if dependency.get("depName") == "clamav/clamav"
+              ]
+              for package in extraction["packageFiles"]["regex"]
+          }
+          assert regex_files == {
+              ".github/workflows/push.yml": [
+                  {"depName": "clamav/clamav", "currentValue": "1.5.4"}
+              ],
+              "Containerfile": [
+                  {
+                      "depName": "clamav/clamav",
+                      "currentValue": "1.5.4",
+                      "currentDigest": "sha256:6d87c712e3391e13c1ba6e05dfb074d4b1ddb5a6834b23bb9da990d2a4ef042a",
+                  }
+              ],
+          }
           PY
