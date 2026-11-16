@@ -39,7 +39,7 @@ jobs:
           workflow = Path(".github/workflows/push.yml").read_text()
           expression = "$" + "{{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}"
           default_branch = "enable=" + expression
-          version_tag = "type=raw,value=" + "$" + "{{ env.CLAMAV_VERSION }}," + default_branch
+          version_tag = "type=raw,value=" + "$" + "{{ env.CLAMAV_VERSION }}" + "\n"
           assert "flavor: latest=false" in workflow
           assert workflow.count(version_tag) == 1
           assert workflow.count("type=raw,value=latest," + default_branch) == 1
