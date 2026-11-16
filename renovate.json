@@ -36,6 +36,7 @@
       "labels": ["renovate", "dependency", "bump:major"]
     },
     {
+      "matchPackageNames": ["clamav/clamav"],
       "matchUpdateTypes": ["patch", "digest"],
       "automerge": true
     }
