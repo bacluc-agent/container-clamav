@@ -37,9 +37,11 @@ jobs:
           from pathlib import Path
 
           workflow = Path(".github/workflows/push.yml").read_text()
-          default_branch = "enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}"
+          expression = "$" + "{{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}"
+          default_branch = "enable=" + expression
+          version_tag = "type=raw,value=" + "$" + "{{ env.CLAMAV_VERSION }}," + default_branch
           assert "flavor: latest=false" in workflow
-          assert workflow.count("type=raw,value=${{ env.CLAMAV_VERSION }}," + default_branch) == 1
+          assert workflow.count(version_tag) == 1
           assert workflow.count("type=raw,value=latest," + default_branch) == 1
           assert "type=ref,event=tag" in workflow
           assert "type=raw,value=1.5.4" not in workflow
