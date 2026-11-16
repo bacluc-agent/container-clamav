@@ -31,3 +31,19 @@ jobs:
           set +e
           docker exec clamav clamdscan --stream /tmp/eicar.com
           [ $? -eq 1 ]
+      - name: Assert release-tag metadata safety
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          workflow = Path(".github/workflows/push.yml").read_text()
+          default_branch = "enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}"
+          assert "flavor: latest=false" in workflow
+          assert workflow.count("type=raw,value=${{ env.CLAMAV_VERSION }}," + default_branch) == 1
+          assert workflow.count("type=raw,value=latest," + default_branch) == 1
+          assert "type=ref,event=tag" in workflow
+          assert "type=raw,value=1.5.4" not in workflow
+          release_ref = "refs/tags/v0.0.1"
+          assert release_ref != "refs/heads/main"
+          assert default_branch.endswith("default_branch) }}")
+          PY
