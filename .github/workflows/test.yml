@@ -93,7 +93,9 @@ jobs:
           workflow_match = re.search(
               renovate_comment + r"\n\s*" + version_pattern, workflow
           )
-          image_match = re.search(image_pattern, containerfile, re.MULTILINE)
+          image_match = re.search(
+              image_pattern, containerfile, re.MULTILINE
+          )
           assert "  pull_request:" not in workflow
           assert workflow_match and image_match
           assert workflow_match.group("version") == image_match.group("version")
