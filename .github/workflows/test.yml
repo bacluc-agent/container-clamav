@@ -82,12 +82,14 @@ jobs:
           import re
           from pathlib import Path
 
-          extraction = next(
+          extraction_events = [
               json.loads(line)
               for line in Path("renovate-extraction.jsonl").read_text().splitlines()
               if line.startswith("{")
               and json.loads(line).get("msg") == "Extracted dependencies"
-          )
+          ]
+          assert len(extraction_events) == 1
+          extraction = extraction_events[0]
           regex_files = {
               package["packageFile"]: [
                   {
