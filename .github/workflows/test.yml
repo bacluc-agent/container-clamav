@@ -67,3 +67,34 @@ jobs:
           assert {version, "latest"} <= main_tags
           assert {"latest"}.isdisjoint(pull_request_tags)
           PY
+      - name: Validate Renovate extraction
+        run: |
+          python3 - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          config = json.loads(Path("renovate.json").read_text())
+          manager = config["customManagers"][0]
+          workflow = Path(".github/workflows/push.yml").read_text()
+          containerfile = Path("Containerfile").read_text()
+          renovate_comment = "# renovate: datasource=docker depName=clamav/clamav"
+          version_pattern = r"CLAMAV_VERSION\s*[=:]\s*\"?(?P<version>[0-9][\w.-]*)\"?"
+          image_pattern = r"^FROM (?P<depName>clamav/clamav):(?P<version>[^@\s]+)"
+
+          assert manager["customType"] == "regex"
+          assert manager["datasourceTemplate"] == "docker"
+          assert manager["versioningTemplate"] == "semver"
+          assert renovate_comment in workflow
+          workflow_match = re.search(
+              renovate_comment + r"\n\s*" + version_pattern, workflow
+          )
+          image_match = re.search(image_pattern, containerfile, re.MULTILINE)
+          assert workflow_match and workflow_match.group("version") == "1.5.4"
+          assert image_match and image_match.group("version") == "1.5.4"
+          assert all(
+              re.search(pattern, workflow, re.MULTILINE)
+              or re.search(pattern, containerfile, re.MULTILINE)
+              for pattern in manager["matchStrings"]
+          )
+          PY
