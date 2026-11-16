@@ -45,8 +45,8 @@ jobs:
           version_expression = "$" + "{{ env.CLAMAV_VERSION }}"
           gated_version_tag = f"type=raw,value={version_expression},enable={default_branch_expression}"
           ungated_version_tag = f"type=raw,value={version_expression}"
-          assert gated_version_tag in tag_specs
-          assert ungated_version_tag not in tag_specs
+          assert gated_version_tag not in tag_specs
+          assert ungated_version_tag in tag_specs
 
           def metadata_tags(ref):
               tags = set()
@@ -66,9 +66,10 @@ jobs:
           main_tags = metadata_tags("refs/heads/main")
           pull_request_tags = metadata_tags("refs/pull/1/merge")
           assert {"v0.0.1"} <= release_tags
-          assert {version, "latest"}.isdisjoint(release_tags)
+          assert {version} <= release_tags
+          assert {"latest"}.isdisjoint(release_tags)
           assert {version, "latest"} <= main_tags
-          assert {version, "latest"}.isdisjoint(pull_request_tags)
+          assert {version} <= pull_request_tags
           assert {"latest"}.isdisjoint(pull_request_tags)
           PY
       - name: Validate Renovate extraction
