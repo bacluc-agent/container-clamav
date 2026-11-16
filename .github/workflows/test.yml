@@ -62,7 +62,8 @@ jobs:
           main_tags = metadata_tags("refs/heads/main")
           pull_request_tags = metadata_tags("refs/pull/1/merge")
           assert {"v0.0.1"} <= release_tags
-          assert {"1.5.4", "latest"}.isdisjoint(release_tags)
-          assert {"1.5.4", "latest"} <= main_tags
-          assert {"1.5.4", "latest"}.isdisjoint(pull_request_tags)
+          assert {version} <= release_tags
+          assert {"latest"}.isdisjoint(release_tags)
+          assert {version, "latest"} <= main_tags
+          assert {"latest"}.isdisjoint(pull_request_tags)
           PY
