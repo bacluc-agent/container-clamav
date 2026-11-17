@@ -18,7 +18,7 @@ jobs:
         run: |
           [ $(docker inspect clamav --format='{{.State.Running}}') = 'true' ]
       - name: Wait online
-        run : |
+        run: |
           wait=60
           while ! docker exec clamav nc -z 0.0.0.0 3310; do
             wait=$((wait - 1))
