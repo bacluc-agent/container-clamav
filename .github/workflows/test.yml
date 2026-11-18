@@ -13,10 +13,11 @@ jobs:
       - name: Build image
         run: docker build -t test -f Containerfile .
       - name: Run image
-        run: docker run -d --name clamav test
+        run: docker run -d --name clamav --user 40000:40001 test
       - name: Verify
         run: |
           [ $(docker inspect clamav --format='{{.State.Running}}') = 'true' ]
+          docker exec clamav sh -c 'test -w /var/lib/clamav && test -w /var/log/clamav'
       - name: Wait online
         run : |
           wait=60
@@ -25,6 +26,7 @@ jobs:
             [ "$wait" -le 0 ] && exit 1
             sleep 1
           done
+          docker exec clamav test -S /tmp/clamd.sock
       - name: Test Eicar
         run: |
           docker exec clamav sh -c 'echo '\''X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*'\'' > /tmp/eicar.com'
